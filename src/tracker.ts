@@ -27,6 +27,10 @@ export class UserSessionTracker {
         this.setupPlugins();
     }
 
+    public static init(options: TrackerOptions): UserSessionTracker {
+        return new UserSessionTracker(options);
+    }
+
     private getStoredSessionId(): string {
         let sessionId = localStorage.getItem('session-id');
         if (!sessionId) {
