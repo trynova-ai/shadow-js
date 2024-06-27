@@ -47,12 +47,12 @@ export class UserSessionTracker {
             timestamp: new Date().toISOString(),
         };
 
-        const headers = new Headers({
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.token}`
-        });
+        const headers = {
+            type: 'application/json',
+            authorization: `Bearer ${this.token}`,
+        };
 
-        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(payload)], headers);
         navigator.sendBeacon(this.url, blob);
     }
 }
