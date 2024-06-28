@@ -2,23 +2,23 @@ import { v4 as uuidv4 } from 'uuid';
 import { WebAppPlugin } from './plugins/webapp';
 
 interface Plugin {
-    setup: (tracker: UserSessionTracker) => void;
+    setup: (shadow: Shadow) => void;
 }
 
-interface TrackerOptions {
+interface ShadowOptions {
     token: string;
     url: string;
     sessionIdProvider?: () => string;
     plugins?: Plugin[];
 }
 
-export class UserSessionTracker {
+export class Shadow {
     private token: string;
     private url: string;
     private sessionId: string;
     private plugins: Plugin[];
 
-    constructor(options: TrackerOptions) {
+    constructor(options: ShadowOptions) {
         this.token = options.token;
         this.url = options.url;
         this.sessionId = options.sessionIdProvider ? options.sessionIdProvider() : this.getStoredSessionId();
@@ -27,8 +27,8 @@ export class UserSessionTracker {
         this.setupPlugins();
     }
 
-    public static init(options: TrackerOptions): UserSessionTracker {
-        return new UserSessionTracker(options);
+    public static init(options: ShadowOptions): Shadow {
+        return new Shadow(options);
     }
 
     private getStoredSessionId(): string {

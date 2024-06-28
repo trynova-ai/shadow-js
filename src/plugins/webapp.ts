@@ -1,13 +1,13 @@
-import { UserSessionTracker } from '../tracker';
+import { Shadow } from '../shadow';
 
 export class WebAppPlugin {
-    setup(tracker: UserSessionTracker) {
+    setup(shadow: Shadow) {
         window.addEventListener('click', (event) => {
-            tracker.trackEvent(this.createEventPayload(event, 'click'));
+            shadow.trackEvent(this.createEventPayload(event, 'click'));
         });
 
         window.addEventListener('input', (event) => {
-            tracker.trackEvent(this.createEventPayload(event, 'input'));
+            shadow.trackEvent(this.createEventPayload(event, 'input'));
         });
     }
 

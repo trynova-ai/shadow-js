@@ -1,5 +1,5 @@
-import { UserSessionTracker } from './tracker';
+import { Shadow } from './shadow';
 import { WebAppPlugin } from './plugins/webapp';
 
-// Export the main tracker class and plugin for use in applications
-export { UserSessionTracker, WebAppPlugin };
+// Export the shadow class and plugin for use in applications
+export { Shadow, WebAppPlugin };
