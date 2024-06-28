@@ -44,7 +44,7 @@ export class Shadow {
         this.plugins.forEach(plugin => plugin.setup(this));
     }
 
-    public trackEvent(event: any) {
+    public capture(event: any) {
         const payload = {
             ...event,
             sessionId: this.sessionId,

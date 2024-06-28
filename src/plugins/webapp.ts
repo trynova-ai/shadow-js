@@ -1,25 +1,36 @@
 import { Shadow } from '../shadow';
 
-export class WebAppPlugin {
-    setup(shadow: Shadow) {
-        window.addEventListener('click', (event) => {
-            shadow.trackEvent(this.createEventPayload(event, 'click'));
-        });
+interface WebAppPluginOptions {
+    ignoreEvents?: string[];
+}
 
-        window.addEventListener('input', (event) => {
-            shadow.trackEvent(this.createEventPayload(event, 'input'));
+export class WebAppPlugin {
+    private events: string[] = ['click', 'input', 'submit', 'popstate', 'load'];
+    private ignoreEvents: string[];
+
+    constructor(options: WebAppPluginOptions = {}) {
+        this.ignoreEvents = options.ignoreEvents || [];
+    }
+
+    setup(shadow: Shadow) {
+        this.events.forEach(eventType => {
+            if (!this.ignoreEvents.includes(eventType)) {
+                window.addEventListener(eventType, (event) => {
+                    shadow.capture(this.eventPayload(event, eventType));
+                });
+            }
         });
     }
 
-    private createEventPayload(event: Event, eventType: string) {
+    private eventPayload(event: Event, eventType: string) {
         const target = event.target as HTMLElement;
         return {
             eventType,
             page: window.location.href,
-            previousPage: document.referrer,
-            interactedElement: target.tagName,
-            elementId: target.id,
-            elementClasses: target.className,
+            previousPage: document.referrer ? document.referrer : '',
+            interactedElement: target ? target.tagName : '',
+            elementId: target ? target.id : '',
+            elementClasses: target ? target.className : '',
         };
     }
 }
