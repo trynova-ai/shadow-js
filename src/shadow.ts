@@ -52,11 +52,15 @@ export class Shadow {
         };
 
         const headers = {
-            type: 'application/json',
-            authorization: `Bearer ${this.token}`,
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`,
         };
 
-        const blob = new Blob([JSON.stringify(payload)], headers);
-        navigator.sendBeacon(this.url, blob);
+        fetch(this.url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload),
+            keepalive: true
+        }).catch(error => console.error('Error sending beacon:', error));
     }
 }
