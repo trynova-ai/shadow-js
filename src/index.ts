@@ -1,5 +1,5 @@
 import { Shadow } from './shadow';
-import { WebAppPlugin } from './plugins/webapp';
+import { BrowserPlugin } from './plugins/browser';
 
 // Export the shadow class and plugin for use in applications
-export { Shadow, WebAppPlugin };
+export { Shadow, BrowserPlugin };

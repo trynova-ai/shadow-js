@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { WebAppPlugin } from './plugins/webapp';
+import { BrowserPlugin } from './plugins/browser';
 
 interface Plugin {
     setup: (shadow: Shadow) => void;
@@ -8,7 +8,7 @@ interface Plugin {
 interface ShadowOptions {
     token: string;
     url: string;
-    sessionIdProvider?: () => string;
+    sessionProvider?: () => string;
     plugins?: Plugin[];
 }
 
@@ -21,10 +21,13 @@ export class Shadow {
     constructor(options: ShadowOptions) {
         this.token = options.token;
         this.url = options.url;
-        this.sessionId = options.sessionIdProvider ? options.sessionIdProvider() : this.getStoredSessionId();
-        this.plugins = options.plugins || [new WebAppPlugin()];
-
-        this.setupPlugins();
+        this.sessionId = options.sessionProvider ? options.sessionProvider() : this.getStoredSessionId();
+        this.plugins = options.plugins || [new BrowserPlugin()];
+        try {
+            this.setupPlugins();
+        } catch (error) {
+            console.error('Error setting up plugins:', error);
+        }
     }
 
     public static init(options: ShadowOptions): Shadow {
@@ -48,7 +51,6 @@ export class Shadow {
         const payload = {
             ...event,
             sessionId: this.sessionId,
-            timestamp: new Date().toISOString(),
         };
 
         const headers = {
@@ -61,6 +63,6 @@ export class Shadow {
             headers: headers,
             body: JSON.stringify(payload),
             keepalive: true
-        }).catch(error => console.error('Error sending beacon:', error));
+        }).catch(error => console.error('Error sending session events:', error));
     }
 }
