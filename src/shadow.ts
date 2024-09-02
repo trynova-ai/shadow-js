@@ -6,21 +6,21 @@ interface Plugin {
 }
 
 interface ShadowOptions {
-    token: string;
     url: string;
+    headers?: Record<string, string>;
     sessionProvider?: () => string;
     plugins?: Plugin[];
 }
 
 export class Shadow {
-    private token: string;
     private url: string;
+    private headers: Record<string, string>;
     private sessionId: string;
     private plugins: Plugin[];
 
     constructor(options: ShadowOptions) {
-        this.token = options.token;
         this.url = options.url;
+        this.headers = options.headers || {};
         this.sessionId = options.sessionProvider ? options.sessionProvider() : this.getStoredSessionId();
         this.plugins = options.plugins || [new BrowserPlugin()];
         try {
@@ -54,8 +54,8 @@ export class Shadow {
         };
 
         const headers = {
+            ...this.headers,
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.token}`,
         };
 
         fetch(this.url, {
