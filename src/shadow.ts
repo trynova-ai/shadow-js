@@ -7,8 +7,8 @@ interface Plugin {
 
 interface BufferConfig {
     enabled: boolean;
-    maxEvents?: number;
-    flushInterval?: number; // in milliseconds
+    maxEvents?: number; // The maximum number of events to buffer before flushing
+    flushInterval?: number; // The interval in milliseconds to flush events
 }
 
 interface ShadowOptions {
@@ -17,6 +17,7 @@ interface ShadowOptions {
     sessionProvider?: () => string;
     plugins?: Plugin[];
     buffer?: BufferConfig;
+    sampleRate?: number;  // The sample rate of clients that should be shadowed. Default is 0.1 (10%)
 }
 
 export class Shadow {
@@ -27,6 +28,7 @@ export class Shadow {
     private bufferConfig: BufferConfig;
     private eventBuffer: any[] = [];
     private flushTimeout: any;
+    private isClientEnabled: boolean;
 
     constructor(options: ShadowOptions) {
         this.url = options.url;
@@ -34,15 +36,19 @@ export class Shadow {
         this.sessionId = options.sessionProvider ? options.sessionProvider() : this.getStoredSessionId();
         this.plugins = options.plugins || [new BrowserPlugin()];
         this.bufferConfig = options.buffer || { enabled: false };
+        const sampleRate = options.sampleRate ?? 0.1; // Default to 10% if not provided
+        this.isClientEnabled = Math.random() < sampleRate;
 
-        if (this.bufferConfig.enabled) {
+        if (this.isClientEnabled && this.bufferConfig.enabled) {
             this.startFlushInterval();
         }
 
-        try {
-            this.setupPlugins();
-        } catch (error) {
-            console.error('Error setting up plugins:', error);
+        if (this.isClientEnabled) {
+            try {
+                this.setupPlugins();
+            } catch (error) {
+                console.error('Error setting up plugins:', error);
+            }
         }
     }
 
@@ -64,6 +70,8 @@ export class Shadow {
     }
 
     public capture(event: any) {
+        if (!this.isClientEnabled) return;
+
         const payload = {
             ...event,
             sessionId: this.sessionId,
