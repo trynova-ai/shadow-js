@@ -40,7 +40,11 @@ export class Shadow {
         this.isClientEnabled = Math.random() < sampleRate;
 
         if (this.isClientEnabled && this.bufferConfig.enabled) {
-            this.startFlushInterval();
+            try {
+                this.startFlushInterval();
+            } catch (error) {
+                console.error('Error starting flush interval:', error);
+            }
         }
 
         if (this.isClientEnabled) {
@@ -53,16 +57,26 @@ export class Shadow {
     }
 
     public static init(options: ShadowOptions): Shadow {
-        return new Shadow(options);
+        try {
+            return new Shadow(options);
+        } catch (error) {
+            console.error('Error initializing Shadow:', error);
+            throw error; // re-throw if needed
+        }
     }
 
     private getStoredSessionId(): string {
-        let sessionId = localStorage.getItem('session-id');
-        if (!sessionId) {
-            sessionId = uuidv4();
-            localStorage.setItem('session-id', sessionId);
+        try {
+            let sessionId = localStorage.getItem('session-id');
+            if (!sessionId) {
+                sessionId = uuidv4();
+                localStorage.setItem('session-id', sessionId);
+            }
+            return sessionId;
+        } catch (error) {
+            console.error('Error getting or storing session ID:', error);
+            return uuidv4(); // fallback to a new UUID if there's an issue
         }
-        return sessionId;
     }
 
     private setupPlugins() {
@@ -72,50 +86,70 @@ export class Shadow {
     public capture(event: any) {
         if (!this.isClientEnabled) return;
 
-        const payload = {
-            ...event,
-            sessionId: this.sessionId,
-        };
+        try {
+            const payload = {
+                ...event,
+                sessionId: this.sessionId,
+            };
 
-        if (this.bufferConfig.enabled) {
-            this.eventBuffer.push(payload);
-            if (this.eventBuffer.length >= (this.bufferConfig.maxEvents || 10)) {
-                this.flushEvents();
+            if (this.bufferConfig.enabled) {
+                this.eventBuffer.push(payload);
+                if (this.eventBuffer.length >= (this.bufferConfig.maxEvents || 10)) {
+                    this.flushEvents();
+                }
+            } else {
+                this.sendEvent(this.url + '/session', payload);
             }
-        } else {
-            this.sendEvent(this.url + '/session', payload);
+        } catch (error) {
+            console.error('Error capturing event:', error);
         }
     }
 
     private flushEvents() {
-        if (this.eventBuffer.length > 0) {
-            const bulkPayload = [...this.eventBuffer];
-            this.eventBuffer = [];
-            this.sendEvent(this.url + '/sessions', bulkPayload);
+        try {
+            if (this.eventBuffer.length > 0) {
+                const bulkPayload = [...this.eventBuffer];
+                this.eventBuffer = [];
+                this.sendEvent(this.url + '/sessions', bulkPayload);
+            }
+        } catch (error) {
+            console.error('Error flushing events:', error);
         }
     }
 
     private startFlushInterval() {
-        this.flushTimeout = setInterval(() => {
-            this.flushEvents();
-        }, this.bufferConfig.flushInterval || 5000);
+        try {
+            this.flushTimeout = setInterval(() => {
+                this.flushEvents();
+            }, this.bufferConfig.flushInterval || 5000);
+        } catch (error) {
+            console.error('Error starting flush interval:', error);
+        }
     }
 
     private sendEvent(endpoint: string, payload: any) {
-        const headers = {
-            ...this.headers,
-            'Content-Type': 'application/json',
-        };
+        try {
+            const headers = {
+                ...this.headers,
+                'Content-Type': 'application/json',
+            };
 
-        fetch(endpoint, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload),
-            keepalive: true
-        }).catch(error => console.error('Error sending session events:', error));
+            fetch(endpoint, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload),
+                keepalive: true
+            }).catch(error => console.error('Error sending session events:', error));
+        } catch (error) {
+            console.error('Error in sendEvent:', error);
+        }
     }
 
     public stopFlushInterval() {
-        clearInterval(this.flushTimeout);
+        try {
+            clearInterval(this.flushTimeout);
+        } catch (error) {
+            console.error('Error stopping flush interval:', error);
+        }
     }
 }
