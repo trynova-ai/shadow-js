@@ -5,11 +5,18 @@ interface Plugin {
     setup: (shadow: Shadow) => void;
 }
 
+interface BufferConfig {
+    enabled: boolean;
+    maxEvents?: number;
+    flushInterval?: number; // in milliseconds
+}
+
 interface ShadowOptions {
     url: string;
     headers?: Record<string, string>;
     sessionProvider?: () => string;
     plugins?: Plugin[];
+    buffer?: BufferConfig;
 }
 
 export class Shadow {
@@ -17,12 +24,21 @@ export class Shadow {
     private headers: Record<string, string>;
     private sessionId: string;
     private plugins: Plugin[];
+    private bufferConfig: BufferConfig;
+    private eventBuffer: any[] = [];
+    private flushTimeout: any;
 
     constructor(options: ShadowOptions) {
         this.url = options.url;
         this.headers = options.headers || {};
         this.sessionId = options.sessionProvider ? options.sessionProvider() : this.getStoredSessionId();
         this.plugins = options.plugins || [new BrowserPlugin()];
+        this.bufferConfig = options.buffer || { enabled: false };
+
+        if (this.bufferConfig.enabled) {
+            this.startFlushInterval();
+        }
+
         try {
             this.setupPlugins();
         } catch (error) {
@@ -53,16 +69,45 @@ export class Shadow {
             sessionId: this.sessionId,
         };
 
+        if (this.bufferConfig.enabled) {
+            this.eventBuffer.push(payload);
+            if (this.eventBuffer.length >= (this.bufferConfig.maxEvents || 10)) {
+                this.flushEvents();
+            }
+        } else {
+            this.sendEvent(this.url + '/session', payload);
+        }
+    }
+
+    private flushEvents() {
+        if (this.eventBuffer.length > 0) {
+            const bulkPayload = [...this.eventBuffer];
+            this.eventBuffer = [];
+            this.sendEvent(this.url + '/sessions', bulkPayload);
+        }
+    }
+
+    private startFlushInterval() {
+        this.flushTimeout = setInterval(() => {
+            this.flushEvents();
+        }, this.bufferConfig.flushInterval || 5000);
+    }
+
+    private sendEvent(endpoint: string, payload: any) {
         const headers = {
             ...this.headers,
             'Content-Type': 'application/json',
         };
 
-        fetch(this.url, {
+        fetch(endpoint, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(payload),
             keepalive: true
         }).catch(error => console.error('Error sending session events:', error));
+    }
+
+    public stopFlushInterval() {
+        clearInterval(this.flushTimeout);
     }
 }
