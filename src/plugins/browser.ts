@@ -56,7 +56,7 @@ export class BrowserPlugin {
                     tag: target.tagName || '',
                     css: target instanceof HTMLElement ? target.style.cssText : '',
                     attributes: this.getAttributes(target),
-                    inner_text: target instanceof HTMLElement ? target.innerText : '',
+                    innerText: target instanceof HTMLElement ? target.innerText : '',
                 } : null,
             };
 
