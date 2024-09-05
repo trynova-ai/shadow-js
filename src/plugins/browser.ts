@@ -36,8 +36,6 @@ export class BrowserPlugin {
                 previousPage: document.referrer ? document.referrer : '',
                 timestamp: new Date().toISOString(),
                 element: target ? {
-                    id: target.id || '',
-                    class: this.getClassNames(target),
                     tag: target.tagName || '',
                     css: target instanceof HTMLElement ? target.style.cssText : '',
                     attributes: this.getAttributes(target),
@@ -48,13 +46,10 @@ export class BrowserPlugin {
             // Check if the event is a change event
             if (eventType === 'change' && target instanceof HTMLInputElement) {
                 payload.action = 'INPUT';
-                payload.value = target.value;
             } else if (eventType === 'change' && target instanceof HTMLSelectElement) {
                 payload.action = 'SELECT';
-                payload.value = target.value;
             } else if (eventType === 'change' && target instanceof HTMLTextAreaElement) {
                 payload.action = 'INPUT';
-                payload.value = target.value;
             }
 
             return payload;
