@@ -1,6 +1,19 @@
 import { Shadow } from '../shadow';
 
+// Define the structure for a scrubbing rule
+type ScrubRule = {
+    type: 'id' | 'regex';
+    match: string;
+    method: 'mask' | 'randomize';
+};
+
 export class BrowserPlugin {    
+    private scrubRules: ScrubRule[] = [];
+
+    constructor(scrubRules: ScrubRule[] = []) {
+        this.scrubRules = scrubRules; 
+    }
+
     setup(shadow: Shadow) {
         const listeners = [
             { type: 'pointerdown', handler: (event: Event) => this.handleEvent('click', event, shadow) },
@@ -21,7 +34,12 @@ export class BrowserPlugin {
     private handleEvent(eventType: string, event: Event, shadow: Shadow) {
         try {
             const target = this.resolveTargetElement(event.target as Element);
-            shadow.capture(this.eventPayload(eventType, target));
+            const payload = this.eventPayload(eventType, target);
+
+            // Apply scrubbing to the event payload
+            const scrubbedPayload = this.applyScrubbingRules(payload);
+
+            shadow.capture(scrubbedPayload);
         } catch (error) {
             console.error(`Error handling ${eventType} event:`, error);
         }
@@ -56,6 +74,55 @@ export class BrowserPlugin {
         } catch (error) {
             console.error(`Error creating event payload for ${eventType} event:`, error);
             return null;
+        }
+    }
+
+    private applyScrubbingRules(payload: any) {
+        if (!payload.element) return payload;
+
+        const element = payload.element;
+
+        this.scrubRules.forEach((rule) => {
+            if (rule.type === 'id' && element.attributes.id === rule.match) {
+                // For ID-based rules, scrub innerText and the "value" attribute
+                this.scrubData(element, rule, 'innerText');
+                if (element.attributes['value']) {
+                    this.scrubData(element, rule, 'value', true);
+                }
+            } else if (rule.type === 'regex') {
+                const regex = new RegExp(rule.match);
+
+                // For regex-based rules, scrub innerText and any matching attribute values
+                if (regex.test(element.innerText || '')) {
+                    this.scrubData(element, rule, 'innerText');
+                }
+
+                Object.keys(element.attributes).forEach((attrKey) => {
+                    const attrValue = element.attributes[attrKey];
+                    if (regex.test(attrValue)) {
+                        this.scrubData(element, rule, attrKey, true);
+                    }
+                });
+            }
+        });
+
+        return payload;
+    }
+
+    private scrubData(element: any, rule: ScrubRule, key: string, isAttribute: boolean = false) {
+        if (rule.method === 'mask') {
+            if (isAttribute) {
+                element.attributes[key] = '****'; // Mask sensitive attribute value
+            } else {
+                element[key] = '****'; // Mask sensitive innerText
+            }
+        } else if (rule.method === 'randomize') {
+            const randomValue = Math.random().toString(36).substr(2, 10);
+            if (isAttribute) {
+                element.attributes[key] = randomValue; // Randomize sensitive attribute value
+            } else {
+                element[key] = randomValue; // Randomize sensitive innerText
+            }
         }
     }
 
