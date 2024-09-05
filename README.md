@@ -91,4 +91,4 @@ sampleRate: 0.1,  // Sample 10% of clients
 
 ## License
 
-[MIT License](LICENSE)
+[Apache License 2.0](LICENSE)
