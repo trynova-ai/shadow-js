@@ -1,47 +1,32 @@
 import { Shadow } from '../shadow';
 
-export class BrowserPlugin {
+export class BrowserPlugin {    
     setup(shadow: Shadow) {
+        const listeners = [
+            { type: 'pointerdown', handler: (event: Event) => this.handleEvent('click', event, shadow) },
+            { type: 'change', handler: (event: Event) => this.handleEvent('change', event, shadow) },
+            { type: 'submit', handler: (event: Event) => this.handleEvent('submit', event, shadow) },
+            { type: 'load', handler: (event: Event) => this.handleEvent('load', event, shadow) }
+        ];
+    
+        this.setupListeners(listeners);
+    }
+
+    private setupListeners(events: { type: string, handler: EventListener }[]) {
+        events.forEach(event => {
+            window.addEventListener(event.type, event.handler);
+        });
+    }
+    
+    private handleEvent(eventType: string, event: Event, shadow: Shadow) {
         try {
-            window.addEventListener('pointerdown', (event: Event) => {
-                try {
-                    const targetElement = this.resolveTargetElement(event.target as Element);
-                    shadow.capture(this.eventPayload('click', targetElement));
-                } catch (error) {
-                    console.error('Error handling click event:', error);
-                }
-            });
-
-            window.addEventListener('change', (event: Event) => {
-                try {
-                    const targetElement = event.target instanceof Element ? event.target : null;
-                    shadow.capture(this.eventPayload('change', targetElement));
-                } catch (error) {
-                    console.error('Error handling change event:', error);
-                }
-            });
-
-            window.addEventListener('submit', (event: SubmitEvent) => {
-                try {
-                    const targetElement = event.target instanceof Element ? event.target : null;
-                    shadow.capture(this.eventPayload('submit', targetElement));
-                } catch (error) {
-                    console.error('Error handling submit event:', error);
-                }
-            });
-
-            window.addEventListener('load', (event: Event) => {
-                try {
-                    const targetElement = event.target instanceof Element ? event.target : null;
-                    shadow.capture(this.eventPayload('load', targetElement));
-                } catch (error) {
-                    console.error('Error handling load event:', error);
-                }
-            });
+            const target = this.resolveTargetElement(event.target as Element);
+            shadow.capture(this.eventPayload(eventType, target));
         } catch (error) {
-            console.error('Error setting up event listeners:', error);
+            console.error(`Error handling ${eventType} event:`, error);
         }
     }
+    
 
     private eventPayload(eventType: string, target: Element | null) {
         try {
