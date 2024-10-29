@@ -16,7 +16,7 @@ export class BrowserPlugin {
 
     setup(shadow: Shadow) {
         const listeners = [
-            { type: 'pointerdown', handler: (event: Event) => this.handleEvent('click', event, shadow) },
+            { type: 'click', handler: (event: Event) => this.handleEvent('click', event, shadow) },
             { type: 'change', handler: (event: Event) => this.handleEvent('change', event, shadow) },
             { type: 'submit', handler: (event: Event) => this.handleEvent('submit', event, shadow) },
             { type: 'load', handler: (event: Event) => this.handleEvent('load', event, shadow) }
@@ -27,7 +27,7 @@ export class BrowserPlugin {
 
     private setupListeners(events: { type: string, handler: EventListener }[]) {
         events.forEach(event => {
-            window.addEventListener(event.type, event.handler);
+            window.addEventListener(event.type, event.handler, { capture: true, passive: true });
         });
     }
     
